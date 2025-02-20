@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import "./App.css";
 import { getDetector, detectLanguage } from "./service/languagaeDetector";
 import { supportedLanguages, translateText } from "./service/translator";
+import { getSummarizer, summarizeText } from "./service/summarize";
 
 function App() {
   const [inputText, setInputText] = useState("");
@@ -9,14 +10,17 @@ function App() {
   const [selectedLanguage, setSelectedLanguage] = useState("en");
   const [detector, setDetector] = useState(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [summarizer, setSummarizer] = useState(null);
 
   // Initialize detector on component mount
   useEffect(() => {
-    async function initDetector() {
+    async function init() {
       const detectorInstance = await getDetector();
+      const summarizerInstance = await getSummarizer();
       setDetector(detectorInstance);
+      setSummarizer(summarizerInstance);
     }
-    initDetector();
+    init();
   }, []);
 
   const handleSend = async () => {
@@ -28,6 +32,9 @@ function App() {
       detectedLang: "detecting...",
       summary: "",
       translated: "",
+      selectedLanguage: "en", // Default selected language
+      isTranslating: false,
+      isSummarizing: false,
     };
 
     setMessages([...messages, newMessage]);
@@ -46,11 +53,24 @@ function App() {
     );
   };
 
+  const handleLanguageChange = (messageIndex, newLanguage) => {
+    setMessages((prev) =>
+      prev.map((msg, idx) =>
+        idx === messageIndex ? { ...msg, selectedLanguage: newLanguage } : msg
+      )
+    );
+  };
+
   const handleTranslate = async (messageIndex) => {
     const message = messages[messageIndex];
     if (!message || isTranslating) return;
 
-    setIsTranslating(true);
+    // Set this specific message as translating
+    setMessages((prev) =>
+      prev.map((msg, idx) =>
+        idx === messageIndex ? { ...msg, isTranslating: true } : msg
+      )
+    );
 
     try {
       // Don't translate if target language is the same as detected language
@@ -61,6 +81,7 @@ function App() {
               ? {
                   ...msg,
                   translated: "Text is already in the selected language",
+                  isTranslating: false,
                 }
               : msg
           )
@@ -77,7 +98,9 @@ function App() {
       if (translatedText) {
         setMessages((prev) =>
           prev.map((msg, idx) =>
-            idx === messageIndex ? { ...msg, translated: translatedText } : msg
+            idx === messageIndex
+              ? { ...msg, translated: translatedText, isTranslating: false }
+              : msg
           )
         );
       } else {
@@ -103,6 +126,71 @@ function App() {
     }
   };
 
+  const handleSummarize = async (messageIndex) => {
+    const message = messages[messageIndex];
+    if (!message || message.isSummarizing) return;
+
+    // Set this specific message as summarizing
+    setMessages((prev) =>
+      prev.map((msg, idx) =>
+        idx === messageIndex ? { ...msg, isSummarizing: true } : msg
+      )
+    );
+
+    try {
+      const summary = await summarizeText(message.text);
+
+      if (summary) {
+        setMessages((prev) =>
+          prev.map((msg, idx) =>
+            idx === messageIndex
+              ? {
+                  ...msg,
+                  summary,
+                  isSummarizing: false,
+                }
+              : msg
+          )
+        );
+      } else {
+        setMessages((prev) =>
+          prev.map((msg, idx) =>
+            idx === messageIndex
+              ? {
+                  ...msg,
+                  summary:
+                    "Summarization failed. The text might be too short or the API encountered an error.",
+                  isSummarizing: false,
+                }
+              : msg
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Summarization error:", error);
+      setMessages((prev) =>
+        prev.map((msg, idx) =>
+          idx === messageIndex
+            ? {
+                ...msg,
+                summary: `Summarization error: ${error.message}`,
+                isSummarizing: false,
+              }
+            : msg
+        )
+      );
+    }
+  };
+
+  //Check if text should show summarize button
+  const shouldShowSummarizeButton = (message) => {
+    return (
+      message.text.length > 150 &&
+      message.detectedLang === "en" &&
+      !message.summary
+    );
+  };
+
   return (
     <>
       <div className="header">
@@ -115,9 +203,31 @@ function App() {
               <p>{msg.text}</p>
               <small>Language: {msg.detectedLang}</small>
 
+              {/* Summarize button - only for English text > 150 chars */}
+              {shouldShowSummarizeButton(msg) && (
+                <div className="message-actions">
+                  <button
+                    onClick={() => handleSummarize(index)}
+                    disabled={msg.isSummarizing}
+                    className="summarize-btn"
+                    aria-label="Summarize text"
+                  >
+                    {msg.isSummarizing ? "Summarizing..." : "Summarize"}
+                  </button>
+                </div>
+              )}
+
+              {/* Summary display */}
+              {msg.summary && (
+                <div className="summary-text">
+                  <h4>Summary:</h4>
+                  <p>{msg.summary}</p>
+                </div>
+              )}
+
               <div className="message-actions">
                 <select
-                  value={selectedLanguage}
+                  value={msg.selectedLanguage}
                   onChange={(e) => setSelectedLanguage(e.target.value)}
                   aria-label="Select translation language"
                 >
@@ -139,7 +249,7 @@ function App() {
 
               {msg.translated && (
                 <div className="translated-text">
-                  <h4>Translation ({selectedLanguage}):</h4>
+                  <h4>Translation ({msg.selectedLanguage}):</h4>
                   <p>{msg.translated}</p>
                 </div>
               )}
