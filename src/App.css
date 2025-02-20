@@ -125,6 +125,6 @@ button {
 
 @media screen and (max-width: 480px) {
   .chat-window {
-    height: 700px; /*for Mobile, it should be 700px*/
+    height: 600px; /*for Mobile, it should be 700px*/
   }
 }
