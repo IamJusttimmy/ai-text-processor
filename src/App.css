@@ -122,3 +122,9 @@ button {
   background-color: #a0a0a0;
   cursor: not-allowed;
 }
+
+@media screen and (max-width: 768px) {
+  .chat-window {
+    height: 720px; /*for Mobile, it should be 700px*/
+  }
+}
