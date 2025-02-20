@@ -123,8 +123,8 @@ button {
   cursor: not-allowed;
 }
 
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 480px) {
   .chat-window {
-    height: 720px; /*for Mobile, it should be 700px*/
+    height: 700px; /*for Mobile, it should be 700px*/
   }
 }
