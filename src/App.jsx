@@ -12,7 +12,7 @@ function App() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [summarizer, setSummarizer] = useState(null);
 
-  // Initialize detector on component mount
+  // Initialize detector and summary on component mount
   useEffect(() => {
     async function init() {
       const detectorInstance = await getDetector();
@@ -32,8 +32,6 @@ function App() {
       detectedLang: "detecting...",
       summary: "",
       translated: "",
-      selectedLanguage: "en", // Default selected language
-      isTranslating: false,
       isSummarizing: false,
     };
 
@@ -49,14 +47,6 @@ function App() {
         idx === prev.length - 1
           ? { ...msg, detectedLang: lang || "unknown" }
           : msg
-      )
-    );
-  };
-
-  const handleLanguageChange = (messageIndex, newLanguage) => {
-    setMessages((prev) =>
-      prev.map((msg, idx) =>
-        idx === messageIndex ? { ...msg, selectedLanguage: newLanguage } : msg
       )
     );
   };

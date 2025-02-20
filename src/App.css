@@ -89,3 +89,36 @@ button {
   font-size: 14px;
   color: #555;
 }
+
+.summary-text {
+  margin-top: 10px;
+  padding: 8px;
+  background-color: #f0f8ff;
+  border-radius: 4px;
+  border-left: 3px solid #4b9cd3;
+}
+
+.summary-text h4 {
+  margin: 0 0 5px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.summarize-btn {
+  background-color: #4b9cd3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  margin-right: auto;
+}
+
+.summarize-btn:hover {
+  background-color: #3a7ca5;
+}
+
+.summarize-btn:disabled {
+  background-color: #a0a0a0;
+  cursor: not-allowed;
+}
